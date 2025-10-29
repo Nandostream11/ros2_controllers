@@ -199,6 +199,10 @@ public:
 
   std::unique_ptr<FriendGpioCommandController> controller_;
 
+  controller_interface::ControllerInterfaceParams createDefaultParams(
+    const std::string & robot_description = "",
+    const rclcpp::NodeOptions & node_options);
+
   const std::vector<std::string> gpio_names{"gpio1", "gpio2"};
   std::vector<double> gpio_commands{1.0, 0.0, 3.1};
   std::vector<double> gpio_states{1.0, 0.0, 3.1};
@@ -218,16 +222,23 @@ public:
     std::make_shared<StateInterface>(gpio_names.at(1), "ana.1", &gpio_states.at(2));
   std::unique_ptr<rclcpp::Node> node;
 };
-
-TEST_F(GpioCommandControllerTestSuite, WhenNoParametersAreSetInitShouldFail)
+controller_interface::ControllerInterfaceParams
+GpioCommandControllerTestSuite::createDefaultParams(
+  const std::string & robot_description, 
+  const rclcpp::NodeOptions & node_options)
 {
   controller_interface::ControllerInterfaceParams params;
   params.controller_name = "test_gpio_command_controller";
-  params.robot_description = ros2_control_test_assets::minimal_robot_urdf;
+  params.robot_description = robot_description;
   params.update_rate = 0;
   params.node_namespace = "";
-  params.node_options = controller_->define_custom_node_options();
-  const auto result = controller_->init(params);
+  params.node_options = node_options;
+  return params;
+}
+
+TEST_F(GpioCommandControllerTestSuite, WhenNoParametersAreSetInitShouldFail)
+{
+  const auto result = controller_->init(createDefaultParams(ros2_control_test_assets::minimal_robot_urdf, controller_->define_custom_node_options()));
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
 }
 
@@ -235,13 +246,7 @@ TEST_F(GpioCommandControllerTestSuite, WhenGpiosParameterIsEmptyInitShouldFail)
 {
   const auto node_options =
     create_node_options_with_overriden_parameters({{"gpios", std::vector<std::string>{}}});
-  controller_interface::ControllerInterfaceParams params;
-  params.controller_name = "test_gpio_command_controller";
-  params.robot_description = "";
-  params.update_rate = 0;
-  params.node_namespace = "";
-  params.node_options = node_options;
-  const auto result = controller_->init(params);
+  const auto result = controller_->init(createDefaultParams("", node_options));
 
   ASSERT_EQ(result, controller_interface::return_type::ERROR);
 }
@@ -253,12 +258,7 @@ TEST_F(GpioCommandControllerTestSuite, WhenInterfacesParameterForGpioIsEmptyInit
      {"command_interfaces.gpio1.interfaces", std::vector<std::string>{}},
      {"state_interfaces.gpio1.interfaces", std::vector<std::string>{}}});
   controller_interface::ControllerInterfaceParams params;
-  params.controller_name = "test_gpio_command_controller";
-  params.robot_description = "";
-  params.update_rate = 0;
-  params.node_namespace = "";
-  params.node_options = node_options;
-  const auto result = controller_->init(params);
+  const auto result = controller_->init(createDefaultParams("", node_options));
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
 }
@@ -267,13 +267,7 @@ TEST_F(GpioCommandControllerTestSuite, WhenInterfacesParameterForGpioIsNotSetIni
 {
   const auto node_options =
     create_node_options_with_overriden_parameters({{"gpios", std::vector<std::string>{"gpio1"}}});
-  controller_interface::ControllerInterfaceParams params;
-  params.controller_name = "test_gpio_command_controller";
-  params.robot_description = "";
-  params.update_rate = 0;
-  params.node_namespace = "";
-  params.node_options = node_options;
-  const auto result = controller_->init(params);
+  const auto result = controller_->init(createDefaultParams("", node_options));
 
   ASSERT_EQ(result, controller_interface::return_type::OK);
 }
@@ -290,12 +284,7 @@ TEST_F(
      {"state_interfaces.gpio2.interfaces", std::vector<std::string>{"ana.1"}}});
 
   controller_interface::ControllerInterfaceParams params;
-  params.controller_name = "test_gpio_command_controller";
-  params.robot_description = "";
-  params.update_rate = 0;
-  params.node_namespace = "";
-  params.node_options = node_options;
-  const auto result = controller_->init(params);
+  const auto result = controller_->init(createDefaultParams("", node_options));
   ASSERT_EQ(result, controller_interface::return_type::OK);
 }
 
